@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	elastic7 "github.com/olivere/elastic/v7"
-	elastic6 "gopkg.in/olivere/elastic.v6"
 
 	"github.com/hashicorp/go-version"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -28,14 +27,12 @@ func TestAccOpensearchOpenSearchSecurityAuditConfig(t *testing.T) {
 	}
 	var allowed bool
 	switch esClient.(type) {
-	case *elastic6.Client:
-		allowed = false
 	default:
 		version, err := version.NewVersion(providerConf.osVersion)
 		if err != nil {
 			t.Skipf("err: %s", err)
 		}
-		allowed = version.Segments()[0] == 1
+		allowed = version.Segments()[0] == 1 // todo
 	}
 
 	resource.ParallelTest(t, resource.TestCase{

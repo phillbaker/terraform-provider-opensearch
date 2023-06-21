@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	elastic7 "github.com/olivere/elastic/v7"
-	elastic6 "gopkg.in/olivere/elastic.v6"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -27,9 +26,6 @@ func TestAccOpensearchOpenDistroISMPolicy(t *testing.T) {
 
 	var config string
 	switch esClient.(type) {
-	case *elastic6.Client:
-		allowed = true
-		config = testAccOpensearchOpenDistroISMPolicyV6
 	default:
 		allowed = true
 		config = testAccOpensearchOpenDistroISMPolicyV7
@@ -80,8 +76,6 @@ func testCheckOpensearchISMPolicyExists(name string) resource.TestCheckFunc {
 		switch esClient.(type) {
 		case *elastic7.Client:
 			_, err = resourceOpensearchGetOpenDistroISMPolicy(rs.Primary.ID, meta.(*ProviderConf))
-		case *elastic6.Client:
-			_, err = resourceOpensearchGetOpenDistroISMPolicy(rs.Primary.ID, meta.(*ProviderConf))
 		default:
 		}
 
@@ -109,8 +103,6 @@ func testCheckOpensearchISMPolicyDestroy(s *terraform.State) error {
 		switch esClient.(type) {
 		case *elastic7.Client:
 			_, err = resourceOpensearchGetOpenDistroISMPolicy(rs.Primary.ID, meta.(*ProviderConf))
-		case *elastic6.Client:
-			_, err = resourceOpensearchGetOpenDistroISMPolicy(rs.Primary.ID, meta.(*ProviderConf))
 		default:
 		}
 
@@ -123,61 +115,6 @@ func testCheckOpensearchISMPolicyDestroy(s *terraform.State) error {
 
 	return nil
 }
-
-var testAccOpensearchOpenDistroISMPolicyV6 = `
-resource "opensearch_ism_policy" "test_policy" {
-  policy_id = "test_policy"
-  body      = <<EOF
-  {
-		"policy": {
-		  "description": "ingesting logs",
-		  "default_state": "ingest",
-		  "error_notification": {
-        "destination": {
-          "slack": {
-            "url": "https://webhook.slack.example.com"
-          }
-        },
-        "message_template": {
-          "lang": "mustache",
-          "source": "The index *{{ctx.index}}* failed to rollover."
-        }
-      },
-		  "states": [
-				{
-				  "name": "ingest",
-				  "actions": [{
-					  "rollover": {
-						"min_doc_count": 5
-					  }
-					}],
-				  "transitions": [{
-					  "state_name": "search"
-					}]
-				},
-				{
-				  "name": "search",
-				  "actions": [],
-				  "transitions": [{
-					  "state_name": "delete",
-					  "conditions": {
-						"min_index_age": "5m"
-					  }
-					}]
-				},
-				{
-				  "name": "delete",
-				  "actions": [{
-					  "delete": {}
-					}],
-				  "transitions": []
-				}
-			]
-		}
-	}
-  EOF
-}
-`
 
 var testAccOpensearchOpenDistroISMPolicyV7 = `
 resource "opensearch_ism_policy" "test_policy" {

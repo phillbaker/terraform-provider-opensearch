@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	elastic7 "github.com/olivere/elastic/v7"
-	elastic6 "gopkg.in/olivere/elastic.v6"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -67,8 +66,6 @@ func testCheckOpensearchSnapshotRepositoryExists(name string) resource.TestCheck
 		switch client := esClient.(type) {
 		case *elastic7.Client:
 			_, err = client.SnapshotGetRepository(rs.Primary.ID).Do(context.TODO())
-		case *elastic6.Client:
-			_, err = client.SnapshotGetRepository(rs.Primary.ID).Do(context.TODO())
 		default:
 			return errors.New("opensearch version not supported")
 		}
@@ -96,8 +93,6 @@ func testCheckOpensearchSnapshotRepositoryDestroy(s *terraform.State) error {
 		}
 		switch client := esClient.(type) {
 		case *elastic7.Client:
-			_, err = client.SnapshotGetRepository(rs.Primary.ID).Do(context.TODO())
-		case *elastic6.Client:
 			_, err = client.SnapshotGetRepository(rs.Primary.ID).Do(context.TODO())
 		default:
 			return errors.New("opensearch version not supported")

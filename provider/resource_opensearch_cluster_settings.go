@@ -15,7 +15,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	elastic7 "github.com/olivere/elastic/v7"
-	elastic6 "gopkg.in/olivere/elastic.v6"
 )
 
 var (
@@ -315,15 +314,6 @@ func resourceOpensearchPutClusterSettings(d *schema.ResourceData, meta interface
 		if err != nil {
 			return err
 		}
-	case *elastic6.Client:
-		_, err = client.PerformRequest(context.TODO(), elastic6.PerformRequestOptions{
-			Method: "PUT",
-			Path:   "/_cluster/settings",
-			Body:   string(body),
-		})
-		if err != nil {
-			return err
-		}
 	default:
 		return errors.New("opensearch version not supported")
 	}
@@ -376,17 +366,6 @@ func resourceOpensearchClusterSettingsGet(meta interface{}) (map[string]interfac
 			return settings, err
 		}
 		response = &res.Body
-	case *elastic6.Client:
-		var res *elastic6.Response
-
-		res, err := client.PerformRequest(context.TODO(), elastic6.PerformRequestOptions{
-			Method: "GET",
-			Path:   "/_cluster/settings?flat_settings=true",
-		})
-		if err != nil {
-			return settings, err
-		}
-		response = &res.Body
 	default:
 		return settings, errors.New("opensearch version not supported")
 	}
@@ -420,15 +399,6 @@ func clearAllSettings(meta interface{}) error {
 	switch client := esClient.(type) {
 	case *elastic7.Client:
 		_, err = client.PerformRequest(context.TODO(), elastic7.PerformRequestOptions{
-			Method: "PUT",
-			Path:   "/_cluster/settings",
-			Body:   body,
-		})
-		if err != nil {
-			return err
-		}
-	case *elastic6.Client:
-		_, err = client.PerformRequest(context.TODO(), elastic6.PerformRequestOptions{
 			Method: "PUT",
 			Path:   "/_cluster/settings",
 			Body:   body,

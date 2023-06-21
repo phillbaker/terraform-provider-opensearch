@@ -16,7 +16,6 @@ import (
 	"github.com/olivere/elastic/uritemplates"
 
 	elastic7 "github.com/olivere/elastic/v7"
-	elastic6 "gopkg.in/olivere/elastic.v6"
 )
 
 var openDistroISMPolicySchema = map[string]*schema.Schema{
@@ -79,7 +78,7 @@ func resourceOpensearchOpenDistroISMPolicyRead(d *schema.ResourceData, m interfa
 	policyResponse, err := resourceOpensearchGetOpenDistroISMPolicy(d.Id(), m)
 
 	if err != nil {
-		if elastic6.IsNotFound(err) || elastic7.IsNotFound(err) {
+		if elastic7.IsNotFound(err) {
 			log.Printf("[WARN] OpenDistroPolicy (%s) not found, removing from state", d.Id())
 			d.SetId("")
 			return nil
@@ -145,15 +144,6 @@ func resourceOpensearchOpenDistroISMPolicyDelete(d *schema.ResourceData, m inter
 		if err != nil {
 			return fmt.Errorf("error deleting policy: %+v : %+v", path, err)
 		}
-	case *elastic6.Client:
-		_, err = client.PerformRequest(context.TODO(), elastic6.PerformRequestOptions{
-			Method: "DELETE",
-			Path:   path,
-		})
-
-		if err != nil {
-			return fmt.Errorf("error deleting policy: %+v : %+v", path, err)
-		}
 	default:
 		err = errors.New("policy resource not implemented prior to v6")
 	}
@@ -182,17 +172,6 @@ func resourceOpensearchGetOpenDistroISMPolicy(policyID string, m interface{}) (G
 	case *elastic7.Client:
 		var res *elastic7.Response
 		res, err = client.PerformRequest(context.TODO(), elastic7.PerformRequestOptions{
-			Method: "GET",
-			Path:   path,
-		})
-
-		if err != nil {
-			return *response, fmt.Errorf("error getting policy: %+v : %+v", path, err)
-		}
-		body = &res.Body
-	case *elastic6.Client:
-		var res *elastic6.Response
-		res, err = client.PerformRequest(context.TODO(), elastic6.PerformRequestOptions{
 			Method: "GET",
 			Path:   path,
 		})
@@ -254,18 +233,6 @@ func resourceOpensearchPutOpenDistroISMPolicy(d *schema.ResourceData, m interfac
 			Retrier: elastic7.NewBackoffRetrier(
 				elastic7.NewExponentialBackoff(100*time.Millisecond, 30*time.Second),
 			),
-		})
-		if err != nil {
-			return response, fmt.Errorf("error putting policy: %+v : %+v : %+v", path, policyJSON, err)
-		}
-		body = &res.Body
-	case *elastic6.Client:
-		var res *elastic6.Response
-		res, err = client.PerformRequest(context.TODO(), elastic6.PerformRequestOptions{
-			Method: "PUT",
-			Path:   path,
-			Params: params,
-			Body:   string(policyJSON),
 		})
 		if err != nil {
 			return response, fmt.Errorf("error putting policy: %+v : %+v : %+v", path, policyJSON, err)

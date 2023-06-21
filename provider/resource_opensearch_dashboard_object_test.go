@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	elastic7 "github.com/olivere/elastic/v7"
-	elastic6 "gopkg.in/olivere/elastic.v6"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -33,9 +32,6 @@ func TestAccOpensearchDashboardObject(t *testing.T) {
 	case *elastic7.Client:
 		visualizationConfig = testAccOpensearch7DashboardVisualization
 		indexPatternConfig = testAccOpensearch7DashboardIndexPattern
-	case *elastic6.Client:
-		visualizationConfig = testAccOpensearch6DashboardVisualization
-		indexPatternConfig = testAccOpensearch6DashboardIndexPattern
 	default:
 		visualizationConfig = testAccOpensearchDashboardVisualization
 		indexPatternConfig = testAccOpensearchDashboardIndexPattern
@@ -94,8 +90,6 @@ func TestAccOpensearchDashboardObject_Rejected(t *testing.T) {
 	var allowed bool
 
 	switch esClient.(type) {
-	case *elastic6.Client:
-		allowed = true
 	default:
 		allowed = false
 	}
@@ -138,8 +132,6 @@ func testCheckOpensearchDashboardObjectExists(name string, objectType string, id
 		switch client := esClient.(type) {
 		case *elastic7.Client:
 			_, err = client.Get().Index(".kibana").Id(id).Do(context.TODO())
-		case *elastic6.Client:
-			_, err = client.Get().Index(".kibana").Type(deprecatedDocType).Id(id).Do(context.TODO())
 		default:
 			return errors.New("opensearch version not supported")
 		}
@@ -169,14 +161,12 @@ func testCheckOpensearchDashboardObjectDestroy(s *terraform.State) error {
 		switch client := esClient.(type) {
 		case *elastic7.Client:
 			_, err = client.Get().Index(".kibana").Id("response-time-percentile").Do(context.TODO())
-		case *elastic6.Client:
-			_, err = client.Get().Index(".kibana").Type("visualization").Id("response-time-percentile").Do(context.TODO())
 		default:
 			return errors.New("opensearch version not supported")
 		}
 
 		if err != nil {
-			if elastic7.IsNotFound(err) || elastic6.IsNotFound(err) {
+			if elastic7.IsNotFound(err) {
 				return nil // should be not found error
 			}
 

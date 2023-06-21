@@ -12,7 +12,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 
 	elastic7 "github.com/olivere/elastic/v7"
-	elastic6 "gopkg.in/olivere/elastic.v6"
 )
 
 const (
@@ -368,8 +367,6 @@ func TestAccOpensearchIndex_doctype(t *testing.T) {
 	switch esClient.(type) {
 	case *elastic7.Client:
 		config = testAccOpensearchMappingWithDocType
-	case *elastic6.Client:
-		config = testAccOpensearchMappingWithoutDocType
 	default:
 		t.Skipf("doctypes removed after v6/v7")
 	}
@@ -403,8 +400,6 @@ func TestAccOpensearchIndex_rolloverAliasOpendistro(t *testing.T) {
 	var allowed bool
 
 	switch esClient.(type) {
-	case *elastic6.Client:
-		allowed = false
 	default:
 		allowed = true
 	}
@@ -459,8 +454,6 @@ func checkOpensearchIndexExists(name string) resource.TestCheckFunc {
 		switch client := esClient.(type) {
 		case *elastic7.Client:
 			_, err = client.IndexGetSettings(rs.Primary.ID).Do(context.TODO())
-		case *elastic6.Client:
-			_, err = client.IndexGetSettings(rs.Primary.ID).Do(context.TODO())
 		default:
 			return errors.New("opensearch version not supported")
 		}
@@ -494,14 +487,6 @@ func checkOpensearchIndexUpdated(name string) resource.TestCheckFunc {
 				return err
 			}
 			settings = resp[rs.Primary.ID].Settings["index"].(map[string]interface{})
-
-		case *elastic6.Client:
-			resp, err := client.IndexGetSettings(rs.Primary.ID).Do(context.TODO())
-			if err != nil {
-				return err
-			}
-			settings = resp[rs.Primary.ID].Settings["index"].(map[string]interface{})
-
 		default:
 			return errors.New("opensearch version not supported")
 		}
@@ -534,8 +519,6 @@ func checkOpensearchIndexDestroy(s *terraform.State) error {
 		switch client := esClient.(type) {
 		case *elastic7.Client:
 			_, err = client.IndexGetSettings(rs.Primary.ID).Do(context.TODO())
-		case *elastic6.Client:
-			_, err = client.IndexGetSettings(rs.Primary.ID).Do(context.TODO())
 		default:
 			return errors.New("opensearch version not supported")
 		}
@@ -561,12 +544,6 @@ func checkOpensearchIndexRolloverAliasExists(provider *schema.Provider, alias st
 		}
 		switch client := esClient.(type) {
 		case *elastic7.Client:
-			r, err := client.CatAliases().Alias(alias).Do(context.TODO())
-			if err != nil {
-				return err
-			}
-			count = len(r)
-		case *elastic6.Client:
 			r, err := client.CatAliases().Alias(alias).Do(context.TODO())
 			if err != nil {
 				return err
@@ -609,12 +586,6 @@ func checkOpensearchIndexRolloverAliasDestroy(provider *schema.Provider, alias s
 		}
 		switch client := esClient.(type) {
 		case *elastic7.Client:
-			r, err := client.CatAliases().Alias(alias).Do(context.TODO())
-			if err != nil {
-				return err
-			}
-			count = len(r)
-		case *elastic6.Client:
 			r, err := client.CatAliases().Alias(alias).Do(context.TODO())
 			if err != nil {
 				return err

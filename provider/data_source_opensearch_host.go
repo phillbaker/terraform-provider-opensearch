@@ -7,7 +7,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 
 	elastic7 "github.com/olivere/elastic/v7"
-	elastic6 "gopkg.in/olivere/elastic.v6"
 )
 
 func dataSourceOpensearchHost() *schema.Resource {
@@ -44,11 +43,6 @@ func dataSourceOpensearchHostRead(d *schema.ResourceData, m interface{}) error {
 	var url string
 	switch client := esClient.(type) {
 	case *elastic7.Client:
-		urls := reflect.ValueOf(client).Elem().FieldByName("urls")
-		if urls.Len() > 0 {
-			url = urls.Index(0).String()
-		}
-	case *elastic6.Client:
 		urls := reflect.ValueOf(client).Elem().FieldByName("urls")
 		if urls.Len() > 0 {
 			url = urls.Index(0).String()

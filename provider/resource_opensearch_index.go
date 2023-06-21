@@ -12,7 +12,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 
 	elastic7 "github.com/olivere/elastic/v7"
-	elastic6 "gopkg.in/olivere/elastic.v6"
 )
 
 var (
@@ -540,20 +539,6 @@ func resourceOpensearchIndexCreate(d *schema.ResourceData, meta interface{}) err
 		if err == nil {
 			resolvedName = resp.Index
 		}
-
-	case *elastic6.Client:
-		put := client.CreateIndex(name)
-		if d.Get("include_type_name").(string) == "true" {
-			put = put.IncludeTypeName(true)
-		} else if d.Get("include_type_name").(string) == "false" {
-			put = put.IncludeTypeName(false)
-		}
-		resp, requestErr := put.BodyJson(body).Do(ctx)
-		err = requestErr
-		if err == nil {
-			resolvedName = resp.Index
-		}
-
 	default:
 		return errors.New("opensearch version not supported")
 	}
@@ -624,10 +609,6 @@ func resourceOpensearchIndexDelete(d *schema.ResourceData, meta interface{}) err
 	switch client := esClient.(type) {
 	case *elastic7.Client:
 		_, err = client.DeleteIndex(name).Do(ctx)
-
-	case *elastic6.Client:
-		_, err = client.DeleteIndex(name).Do(ctx)
-
 	default:
 		err = errors.New("opensearch version not supported")
 	}
@@ -650,10 +631,6 @@ func allowIndexDestroy(indexName string, d *schema.ResourceData, meta interface{
 	switch client := esClient.(type) {
 	case *elastic7.Client:
 		count, err = client.Count(indexName).Do(ctx)
-
-	case *elastic6.Client:
-		count, err = client.Count(indexName).Do(ctx)
-
 	default:
 		err = errors.New("opensearch version not supported")
 	}
@@ -706,8 +683,6 @@ func resourceOpensearchIndexUpdate(d *schema.ResourceData, meta interface{}) err
 	switch client := esClient.(type) {
 	case *elastic7.Client:
 		_, err = client.IndexPutSettings(name).BodyJson(body).Do(ctx)
-	case *elastic6.Client:
-		_, err = client.IndexPutSettings(name).BodyJson(body).Do(ctx)
 	default:
 		return errors.New("opensearch version not supported")
 	}
@@ -742,19 +717,6 @@ func getWriteIndexByAlias(alias string, d *schema.ResourceData, meta interface{}
 				return column.Index
 			}
 		}
-
-	case *elastic6.Client:
-		r, err := client.CatAliases().Alias(alias).Columns(columns...).Do(ctx)
-		if err != nil {
-			log.Printf("[INFO] getWriteIndexByAlias: %+v", err)
-			return index
-		}
-		for _, column := range r {
-			if column.IsWriteIndex == "true" {
-				return column.Index
-			}
-		}
-
 	default:
 		log.Printf("[INFO] opensearch version not supported")
 	}
@@ -788,20 +750,6 @@ func resourceOpensearchIndexRead(d *schema.ResourceData, meta interface{}) error
 				return nil
 			}
 
-			return err
-		}
-
-		if resp, ok := r[index]; ok {
-			settings = resp.Settings
-		}
-	case *elastic6.Client:
-		r, err := client.IndexGetSettings(index).FlatSettings(true).Do(ctx)
-		if err != nil {
-			if elastic6.IsNotFound(err) {
-				log.Printf("[WARN] Index (%s) not found, removing from state", index)
-				d.SetId("")
-				return nil
-			}
 			return err
 		}
 

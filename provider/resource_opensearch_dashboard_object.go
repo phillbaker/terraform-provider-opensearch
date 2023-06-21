@@ -11,7 +11,6 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/structure"
 
 	elastic7 "github.com/olivere/elastic/v7"
-	elastic6 "gopkg.in/olivere/elastic.v6"
 )
 
 func resourceOpensearchDashboardObject() *schema.Resource {
@@ -98,8 +97,6 @@ func resourceOpensearchDashboardObjectCreate(d *schema.ResourceData, meta interf
 	switch client := esClient.(type) {
 	case *elastic7.Client:
 		success, err = elastic7CreateIndexIfNotExists(client, index, mapping_index)
-	case *elastic6.Client:
-		success, err = elastic6CreateIndexIfNotExists(client, index, mapping_index)
 	default:
 		return errors.New("opensearch version not supported")
 	}
@@ -147,26 +144,6 @@ func elastic7CreateIndexIfNotExists(client *elastic7.Client, index string, mappi
 	return INDEX_EXISTS, nil
 }
 
-func elastic6CreateIndexIfNotExists(client *elastic6.Client, index string, mapping_index string) (int, error) {
-	log.Printf("[INFO] elastic6CreateIndexIfNotExists")
-
-	// Use the IndexExists service to check if a specified index exists.
-	exists, err := client.IndexExists(index).Do(context.TODO())
-	if err != nil {
-		return INDEX_CREATION_FAILED, err
-	}
-	if !exists {
-		createIndex, err := client.CreateIndex(mapping_index).Body(`{"mappings":{}}`).Do(context.TODO())
-		if createIndex.Acknowledged {
-			return INDEX_CREATED, err
-		} else {
-			return INDEX_CREATION_FAILED, err
-		}
-	}
-
-	return INDEX_EXISTS, nil
-}
-
 func resourceOpensearchDashboardObjectRead(d *schema.ResourceData, meta interface{}) error {
 	bodyString := d.Get("body").(string)
 	var body []interface{}
@@ -195,18 +172,12 @@ func resourceOpensearchDashboardObjectRead(d *schema.ResourceData, meta interfac
 		if err == nil {
 			resultJSON, err = json.Marshal(result)
 		}
-	case *elastic6.Client:
-		var result *elastic6.GetResult
-		result, err = elastic6GetObject(client, objectType, index, id)
-		if err == nil {
-			resultJSON, err = json.Marshal(result)
-		}
 	default:
 		return errors.New("opensearch version not supported")
 	}
 
 	if err != nil {
-		if elastic7.IsNotFound(err) || elastic6.IsNotFound(err) {
+		if elastic7.IsNotFound(err) {
 			log.Printf("[WARN] Dashboard Object (%s) not found, removing from state", id)
 			d.SetId("")
 			return nil
@@ -276,8 +247,6 @@ func resourceOpensearchDashboardObjectDelete(d *schema.ResourceData, meta interf
 	switch client := esClient.(type) {
 	case *elastic7.Client:
 		err = elastic7DeleteIndex(client, index, id)
-	case *elastic6.Client:
-		err = elastic6DeleteIndex(client, objectType, index, id)
 	default:
 		return errors.New("opensearch version not supported")
 	}
@@ -296,17 +265,6 @@ func elastic7DeleteIndex(client *elastic7.Client, index string, id string) error
 		Do(context.TODO())
 
 	// we'll get an error if it's not found
-	return err
-}
-
-func elastic6DeleteIndex(client *elastic6.Client, objectType string, index string, id string) error {
-	_, err := client.Delete().
-		Index(index).
-		Type(objectType).
-		Id(id).
-		Do(context.TODO())
-
-	// we'll get an error if it's not found: https://github.com/olivere/elastic/blob/v6.1.26/delete.go#L207-L210
 	return err
 }
 
@@ -334,8 +292,6 @@ func resourceOpensearchPutDashboardObject(d *schema.ResourceData, meta interface
 	switch client := esClient.(type) {
 	case *elastic7.Client:
 		err = elastic7PutIndex(client, index, id, data)
-	case *elastic6.Client:
-		err = elastic6PutIndex(client, objectType, index, id, data)
 	default:
 		err = errors.New("opensearch version not supported")
 	}
@@ -350,17 +306,6 @@ func resourceOpensearchPutDashboardObject(d *schema.ResourceData, meta interface
 func elastic7PutIndex(client *elastic7.Client, index string, id string, data interface{}) error {
 	_, err := client.Index().
 		Index(index).
-		Id(id).
-		BodyJson(&data).
-		Do(context.TODO())
-
-	return err
-}
-
-func elastic6PutIndex(client *elastic6.Client, objectType string, index string, id string, data interface{}) error {
-	_, err := client.Index().
-		Index(index).
-		Type(objectType).
 		Id(id).
 		BodyJson(&data).
 		Do(context.TODO())

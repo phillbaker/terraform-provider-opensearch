@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	elastic7 "github.com/olivere/elastic/v7"
-	elastic6 "gopkg.in/olivere/elastic.v6"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -29,8 +28,6 @@ func TestAccOpensearchIngestPipeline(t *testing.T) {
 	switch esClient.(type) {
 	case *elastic7.Client:
 		config = testAccOpensearchIngestPipelineV7
-	case *elastic6.Client:
-		config = testAccOpensearchIngestPipelineV6
 	default:
 		config = testAccOpensearchIngestPipelineV5
 	}
@@ -66,8 +63,6 @@ func TestAccOpensearchIngestPipeline_importBasic(t *testing.T) {
 	switch esClient.(type) {
 	case *elastic7.Client:
 		config = testAccOpensearchIngestPipelineV7
-	case *elastic6.Client:
-		config = testAccOpensearchIngestPipelineV6
 	default:
 		config = testAccOpensearchIngestPipelineV5
 	}
@@ -111,8 +106,6 @@ func testCheckOpensearchIngestPipelineExists(name string) resource.TestCheckFunc
 		switch client := esClient.(type) {
 		case *elastic7.Client:
 			_, err = client.IngestGetPipeline(rs.Primary.ID).Do(context.TODO())
-		case *elastic6.Client:
-			_, err = client.IngestGetPipeline(rs.Primary.ID).Do(context.TODO())
 		default:
 			return errors.New("opensearch version not supported")
 		}
@@ -140,8 +133,6 @@ func testCheckOpensearchIngestPipelineDestroy(s *terraform.State) error {
 		}
 		switch client := esClient.(type) {
 		case *elastic7.Client:
-			_, err = client.IngestGetPipeline(rs.Primary.ID).Do(context.TODO())
-		case *elastic6.Client:
 			_, err = client.IngestGetPipeline(rs.Primary.ID).Do(context.TODO())
 		default:
 			return errors.New("opensearch version not supported")

@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	elastic7 "github.com/olivere/elastic/v7"
-	elastic6 "gopkg.in/olivere/elastic.v6"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/acctest"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -26,8 +25,6 @@ func TestAccOpensearchOpenDistroDashboardTenant(t *testing.T) {
 	}
 	var allowed bool
 	switch esClient.(type) {
-	case *elastic6.Client:
-		allowed = false
 	default:
 		allowed = true
 	}

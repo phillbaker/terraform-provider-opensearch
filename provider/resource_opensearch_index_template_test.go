@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	elastic7 "github.com/olivere/elastic/v7"
-	elastic6 "gopkg.in/olivere/elastic.v6"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -28,8 +27,6 @@ func TestAccOpensearchIndexTemplate(t *testing.T) {
 	switch esClient.(type) {
 	case *elastic7.Client:
 		config = testAccOpensearchIndexTemplateV7
-	case *elastic6.Client:
-		config = testAccOpensearchIndexTemplateV6
 	default:
 		config = testAccOpensearchIndexTemplateV5
 	}
@@ -65,8 +62,6 @@ func TestAccOpensearchIndexTemplate_importBasic(t *testing.T) {
 	switch esClient.(type) {
 	case *elastic7.Client:
 		config = testAccOpensearchIndexTemplateV7
-	case *elastic6.Client:
-		config = testAccOpensearchIndexTemplateV6
 	default:
 		config = testAccOpensearchIndexTemplateV5
 	}
@@ -110,8 +105,6 @@ func testCheckOpensearchIndexTemplateExists(name string) resource.TestCheckFunc 
 		switch client := esClient.(type) {
 		case *elastic7.Client:
 			_, err = client.IndexGetTemplate(rs.Primary.ID).Do(context.TODO())
-		case *elastic6.Client:
-			_, err = client.IndexGetTemplate(rs.Primary.ID).Do(context.TODO())
 		default:
 			return errors.New("opensearch version not supported")
 		}
@@ -140,8 +133,6 @@ func testCheckOpensearchIndexTemplateDestroy(s *terraform.State) error {
 		switch client := esClient.(type) {
 		case *elastic7.Client:
 			_, err = client.IndexGetTemplate(rs.Primary.ID).Do(context.TODO())
-		case *elastic6.Client:
-			_, err = client.IndexGetTemplate(rs.Primary.ID).Do(context.TODO())
 		default:
 			return errors.New("opensearch version not supported")
 		}
@@ -162,38 +153,6 @@ resource "opensearch_index_template" "test" {
   body = <<EOF
 {
   "template": "te*",
-  "settings": {
-    "index": {
-      "number_of_shards": 1
-    }
-  },
-  "mappings": {
-    "type1": {
-      "_source": {
-        "enabled": false
-      },
-      "properties": {
-        "host_name": {
-          "type": "keyword"
-        },
-        "created_at": {
-          "type": "date",
-          "format": "EEE MMM dd HH:mm:ss Z YYYY"
-        }
-      }
-    }
-  }
-}
-EOF
-}
-`
-
-var testAccOpensearchIndexTemplateV6 = `
-resource "opensearch_index_template" "test" {
-  name = "terraform-test"
-  body = <<EOF
-{
-  "index_patterns": ["te*", "bar*"],
   "settings": {
     "index": {
       "number_of_shards": 1

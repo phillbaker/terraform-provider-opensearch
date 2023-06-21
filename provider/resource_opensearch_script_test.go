@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	elastic7 "github.com/olivere/elastic/v7"
-	elastic6 "gopkg.in/olivere/elastic.v6"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
@@ -50,8 +49,6 @@ func testCheckOpensearchScriptExists(name string) resource.TestCheckFunc {
 		switch client := esClient.(type) {
 		case *elastic7.Client:
 			_, err = client.GetScript().Id("my_script").Do(context.TODO())
-		case *elastic6.Client:
-			_, err = client.GetScript().Id("my_script").Do(context.TODO())
 		default:
 		}
 
@@ -78,8 +75,6 @@ func testCheckOpensearchScriptDestroy(s *terraform.State) error {
 		}
 		switch client := esClient.(type) {
 		case *elastic7.Client:
-			_, err = client.GetScript().Id("my_script").Do(context.TODO())
-		case *elastic6.Client:
 			_, err = client.GetScript().Id("my_script").Do(context.TODO())
 		default:
 		}

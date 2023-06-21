@@ -11,7 +11,6 @@ import (
 
 	"github.com/olivere/elastic/uritemplates"
 	elastic7 "github.com/olivere/elastic/v7"
-	elastic6 "gopkg.in/olivere/elastic.v6"
 )
 
 const DESTINATION_NAME_FIELD = "destination.name.keyword"
@@ -58,8 +57,6 @@ func dataSourceOpensearchOpenDistroDestinationRead(d *schema.ResourceData, m int
 		if err != nil {
 			id, destination, err = destinationOpenSearch7Search(client, DESTINATION_INDEX, destinationName)
 		}
-	case *elastic6.Client:
-		id, destination, err = destinationOpenSearch6Search(client, DESTINATION_INDEX, destinationName)
 	default:
 		err = errors.New("destination resource not implemented prior to v6")
 	}
@@ -101,30 +98,6 @@ func destinationOpenSearch7Search(client *elastic7.Client, index string, name st
 	}
 	if result.TotalHits() == 1 {
 		if err := json.Unmarshal(result.Hits.Hits[0].Source, &destination); err != nil {
-			return "", destination, fmt.Errorf("error unmarshalling destination body: %+v", err)
-		}
-
-		return result.Hits.Hits[0].Id, destination["destination"].(map[string]interface{}), nil
-	} else if result.TotalHits() < 1 {
-		return "", destination, err
-	} else {
-		return "", destination, fmt.Errorf("1 result expected, found %d.", result.TotalHits())
-	}
-}
-
-func destinationOpenSearch6Search(client *elastic6.Client, index string, name string) (string, map[string]interface{}, error) {
-	termQuery := elastic6.NewTermQuery(DESTINATION_NAME_FIELD, name)
-	result, err := client.Search().
-		Index(index).
-		Query(termQuery).
-		Do(context.TODO())
-
-	destination := make(map[string]interface{})
-	if err != nil {
-		return "", destination, err
-	}
-	if result.TotalHits() == 1 {
-		if err := json.Unmarshal(*result.Hits.Hits[0].Source, &destination); err != nil {
 			return "", destination, fmt.Errorf("error unmarshalling destination body: %+v", err)
 		}
 

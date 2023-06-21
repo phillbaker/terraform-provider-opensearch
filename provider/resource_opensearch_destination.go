@@ -13,7 +13,6 @@ import (
 	"github.com/olivere/elastic/uritemplates"
 
 	elastic7 "github.com/olivere/elastic/v7"
-	elastic6 "gopkg.in/olivere/elastic.v6"
 )
 
 const DESTINATION_TYPE = "_doc"
@@ -67,7 +66,7 @@ func resourceOpensearchOpenDistroDestinationCreate(d *schema.ResourceData, m int
 func resourceOpensearchOpenDistroDestinationRead(d *schema.ResourceData, m interface{}) error {
 	destination, err := resourceOpensearchOpenDistroQueryOrGetDestination(d.Id(), m)
 
-	if elastic6.IsNotFound(err) || elastic7.IsNotFound(err) {
+	if elastic7.IsNotFound(err) {
 		log.Printf("[WARN] Destination (%s) not found, removing from state", d.Id())
 		d.SetId("")
 		return nil
@@ -113,11 +112,6 @@ func resourceOpensearchOpenDistroDestinationDelete(d *schema.ResourceData, m int
 	switch client := esClient.(type) {
 	case *elastic7.Client:
 		_, err = client.PerformRequest(context.TODO(), elastic7.PerformRequestOptions{
-			Method: "DELETE",
-			Path:   path,
-		})
-	case *elastic6.Client:
-		_, err = client.PerformRequest(context.TODO(), elastic6.PerformRequestOptions{
 			Method: "DELETE",
 			Path:   path,
 		})
@@ -189,15 +183,6 @@ func resourceOpensearchOpenDistroQueryOrGetDestination(destinationID string, m i
 			}
 			return dr.Destination, nil
 		}
-	case *elastic6.Client:
-		result, err := elastic6GetObject(client, DESTINATION_TYPE, DESTINATION_INDEX, destinationID)
-		if err != nil {
-			return Destination{}, err
-		}
-		if err := json.Unmarshal(*result.Source, &dr); err != nil {
-			return Destination{}, fmt.Errorf("error unmarshalling destination body: %+v: %+v", err, result.Source)
-		}
-		return dr.Destination, nil
 	default:
 		return Destination{}, errors.New("destination resource not implemented prior to v6")
 	}
@@ -220,17 +205,6 @@ func resourceOpensearchOpenDistroPostDestination(d *schema.ResourceData, m inter
 	case *elastic7.Client:
 		var res *elastic7.Response
 		res, err = client.PerformRequest(context.TODO(), elastic7.PerformRequestOptions{
-			Method: "POST",
-			Path:   path,
-			Body:   destinationJSON,
-		})
-		if err != nil {
-			return response, err
-		}
-		body = res.Body
-	case *elastic6.Client:
-		var res *elastic6.Response
-		res, err = client.PerformRequest(context.TODO(), elastic6.PerformRequestOptions{
 			Method: "POST",
 			Path:   path,
 			Body:   destinationJSON,
@@ -272,17 +246,6 @@ func resourceOpensearchOpenDistroPutDestination(d *schema.ResourceData, m interf
 	case *elastic7.Client:
 		var res *elastic7.Response
 		res, err = client.PerformRequest(context.TODO(), elastic7.PerformRequestOptions{
-			Method: "PUT",
-			Path:   path,
-			Body:   destinationJSON,
-		})
-		if err != nil {
-			return response, err
-		}
-		body = res.Body
-	case *elastic6.Client:
-		var res *elastic6.Response
-		res, err = client.PerformRequest(context.TODO(), elastic6.PerformRequestOptions{
 			Method: "PUT",
 			Path:   path,
 			Body:   destinationJSON,
